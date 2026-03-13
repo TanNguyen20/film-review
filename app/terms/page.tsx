@@ -1,12 +1,12 @@
 import { Navbar } from "@/components/navbar"
-import { Film, Mail, ChevronRight } from "lucide-react"
-import Link from "next/link"
+import { ChevronRight, Film, Mail } from "lucide-react"
 import type { Metadata } from "next"
+import Link from "next/link"
 
 export const metadata: Metadata = {
-  title: "Terms of Service — CineVault",
+  title: "Terms of Service — FilmReview",
   description:
-    "Read the Terms of Service for CineVault. Learn about your rights and responsibilities when using our movie review platform.",
+    "Read the Terms of Service for FilmReview. Learn about your rights and responsibilities when using our movie review platform.",
 }
 
 const sections = [
@@ -214,7 +214,7 @@ export default function TermsPage() {
               {/* Footer note */}
               <div className="mt-12 rounded-lg border border-border bg-card p-6">
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  By continuing to use CineVault, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree to these terms, please discontinue use of the platform.
+                  By continuing to use FilmReview, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree to these terms, please discontinue use of the platform.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-3">
                   <Link
@@ -252,11 +252,11 @@ export default function TermsPage() {
               <Film className="h-3.5 w-3.5 text-primary-foreground" />
             </div>
             <span className="font-serif text-base font-bold text-foreground">
-              Cine<span className="text-primary">Vault</span>
+              Film<span className="text-primary">Review</span>
             </span>
           </div>
           <p className="text-xs text-muted-foreground text-center">
-            &copy; {new Date().getFullYear()} CineVault. All rights reserved.
+            &copy; {new Date().getFullYear()} FilmReview. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <Link href="/terms" className="text-primary font-medium">Terms of Service</Link>

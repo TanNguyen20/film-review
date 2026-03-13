@@ -1,5 +1,5 @@
-import Link from "next/link"
 import { Film } from "lucide-react"
+import Link from "next/link"
 
 const links = {
   Explore: [
@@ -26,14 +26,14 @@ export function Footer() {
         <div className="flex flex-col md:flex-row gap-10 justify-between">
           {/* Brand */}
           <div className="max-w-xs">
-            <div className="flex items-center gap-2 mb-3">
+            <Link href="/" className="flex items-center gap-2 shrink-0">
               <div className="flex h-8 w-8 items-center justify-center rounded bg-primary">
                 <Film className="h-4 w-4 text-primary-foreground" />
               </div>
-              <span className="font-serif text-xl font-bold tracking-tight">
-                Cine<span className="text-primary">Vault</span>
+              <span className="font-serif text-xl font-bold text-foreground tracking-tight">
+                Film<span className="text-primary">Review</span>
               </span>
-            </div>
+            </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Discover trending films, write reviews, and share your opinions with a global community of movie lovers.
             </p>
@@ -63,7 +63,7 @@ export function Footer() {
 
         <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} CineVault. All rights reserved.
+            &copy; {new Date().getFullYear()} FilmReview. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <Link href="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">

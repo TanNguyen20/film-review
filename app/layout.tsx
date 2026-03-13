@@ -1,6 +1,6 @@
-import type { Metadata } from 'next'
-import { Inter, Playfair_Display } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
 import './globals.css'
 
 const inter = Inter({
@@ -8,13 +8,8 @@ const inter = Inter({
   variable: '--font-inter',
 })
 
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  variable: '--font-playfair',
-})
-
 export const metadata: Metadata = {
-  title: 'CineVault — Watch, Review & Share',
+  title: 'FilmReview — Watch, Review & Share',
   description: 'Discover trending films, write reviews, and share your opinions with a community of movie lovers.',
   generator: 'v0.app',
   keywords: ['movies', 'film reviews', 'trending films', 'movie ratings', 'cinema'],
@@ -34,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
+    <html lang="en" className={`${inter.variable}`}>
       <body className="font-sans antialiased bg-[rgb(var(--background))] text-[rgb(var(--foreground))]">
         {children}
         <Analytics />

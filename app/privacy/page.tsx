@@ -1,12 +1,12 @@
 import { Navbar } from "@/components/navbar"
-import { Shield, Mail, ChevronRight } from "lucide-react"
-import Link from "next/link"
+import { ChevronRight, Mail, Shield } from "lucide-react"
 import type { Metadata } from "next"
+import Link from "next/link"
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — CineVault",
+  title: "Privacy Policy — FilmReview",
   description:
-    "Read the Privacy Policy for CineVault. Learn how we collect, use, and protect your personal information on our movie review platform.",
+    "Read the Privacy Policy for FilmReview. Learn how we collect, use, and protect your personal information on our movie review platform.",
 }
 
 const sections = [
@@ -244,7 +244,7 @@ export default function PrivacyPage() {
               {/* Footer note */}
               <div className="mt-12 rounded-lg border border-border bg-card p-6">
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  By using CineVault, you acknowledge that you have read and understood this Privacy Policy. We are committed to protecting your privacy and handling your data with care and transparency.
+                  By using FilmReview, you acknowledge that you have read and understood this Privacy Policy. We are committed to protecting your privacy and handling your data with care and transparency.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-3">
                   <Link
@@ -282,11 +282,11 @@ export default function PrivacyPage() {
               <Shield className="h-3.5 w-3.5 text-primary-foreground" />
             </div>
             <span className="font-serif text-base font-bold text-foreground">
-              Cine<span className="text-primary">Vault</span>
+              Film<span className="text-primary">Review</span>
             </span>
           </div>
           <p className="text-xs text-muted-foreground text-center">
-            &copy; {new Date().getFullYear()} CineVault. All rights reserved.
+            &copy; {new Date().getFullYear()} FilmReview. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>

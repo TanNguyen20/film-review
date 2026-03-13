@@ -29,7 +29,7 @@ export function Navbar() {
               <Film className="h-4 w-4 text-primary-foreground" />
             </div>
             <span className="font-serif text-xl font-bold text-foreground tracking-tight">
-              Cine<span className="text-primary">Vault</span>
+              Film<span className="text-primary">Review</span>
             </span>
           </Link>
 
