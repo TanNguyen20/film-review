@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession, signIn, signOut } from "@/lib/auth-client";
+import { useSession, signIn, signOut } from "../lib/auth-client";
 import { Button } from "./ui/button";
 import { LogOut, User } from "lucide-react";
 
