@@ -10,6 +10,7 @@ export const auth = betterAuth({
   database: pool,
   socialProviders: {
     tiktok: {
+      clientId: process.env.TIKTOK_CLIENT_KEY as string,
       clientKey: process.env.TIKTOK_CLIENT_KEY as string,
       clientSecret: process.env.TIKTOK_CLIENT_SECRET as string,
     },
