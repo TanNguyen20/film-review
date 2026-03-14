@@ -12,7 +12,7 @@ export function TikTokLoginButton() {
       setIsPending(true);
       await authClient.signIn.social({
         provider: "tiktok",
-        callbackURL: "/dashboard", // Target redirect route upon successful login
+        callbackURL: "/", // Target redirect route upon successful login
       });
     } catch (error) {
       console.error("TikTok authentication failed:", error);
