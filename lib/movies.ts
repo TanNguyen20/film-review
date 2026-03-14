@@ -2,16 +2,16 @@ export interface Movie {
   id: number
   title: string
   genre: string
-  genreList: string[]
+  genreList?: string[]
   rating: number
   year: number
   poster: string
   rank: number
   hot: boolean
-  director: string
-  cast: string[]
-  duration: string
-  synopsis: string
+  director?: string
+  cast?: string[]
+  duration?: string
+  synopsis?: string
   badge?: string
 }
 

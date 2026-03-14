@@ -4,10 +4,11 @@ import { useState } from "react"
 import Image from "next/image"
 import { Star, Plus, Play, TrendingUp } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Movie } from "@/lib/movies"
 
 const TABS = ["All", "Action", "Drama", "Sci-Fi", "Horror", "Comedy"]
 
-const movies = [
+const movies: Movie[] = [
   { id: 1, title: "Stellar Horizon", genre: "Sci-Fi", rating: 9.1, year: 2025, poster: "/images/movie-1.jpg", rank: 1, hot: true },
   { id: 2, title: "Neon Shadows", genre: "Thriller", rating: 8.7, year: 2025, poster: "/images/movie-2.jpg", rank: 2, hot: true },
   { id: 3, title: "Ember Throne", genre: "Fantasy", rating: 8.9, year: 2024, poster: "/images/movie-3.jpg", rank: 3, hot: false },
@@ -18,7 +19,7 @@ const movies = [
   { id: 8, title: "Dawn's Edge", genre: "Drama", rating: 8.6, year: 2024, poster: "/images/movie-8.jpg", rank: 8, hot: true },
 ]
 
-function MovieCard({ movie, onSelect }: { movie: typeof movies[0]; onSelect: (m: typeof movies[0]) => void }) {
+function MovieCard({ movie, onSelect }: { movie: typeof movies[0]; onSelect: (m: Movie) => void }) {
   const [inList, setInList] = useState(false)
 
   return (
@@ -81,7 +82,7 @@ function MovieCard({ movie, onSelect }: { movie: typeof movies[0]; onSelect: (m:
   )
 }
 
-export function TrendingSection({ onMovieSelect }: { onMovieSelect: (m: typeof movies[0]) => void }) {
+export function TrendingSection({ onMovieSelect }: { onMovieSelect: (m: Movie) => void }) {
   const [activeTab, setActiveTab] = useState("All")
 
   const filtered = activeTab === "All" ? movies : movies.filter((m) => m.genre === activeTab)

@@ -7,6 +7,7 @@ import { Film, Search, Bell, User, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import { TikTokLoginButton } from "./TikTokLoginButton"
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -87,13 +88,9 @@ export function Navbar() {
               <Bell className="h-5 w-5" />
               <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
             </button>
-            <Button
-              size="sm"
-              className="hidden sm:flex bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
-            >
-              <User className="h-4 w-4 mr-1" />
-              Sign In
-            </Button>
+
+            <div className="hidden sm:flex sm:mx-2"><TikTokLoginButton /></div>
+            
             <button
               className="md:hidden text-muted-foreground hover:text-foreground"
               onClick={() => setMobileOpen(!mobileOpen)}
@@ -130,9 +127,7 @@ export function Navbar() {
             })}
           </nav>
           <div className="mt-4 pt-4 border-t border-border">
-            <Button className="w-full bg-primary text-primary-foreground font-semibold">
-              Sign In
-            </Button>
+            <TikTokLoginButton />
           </div>
         </div>
       )}
