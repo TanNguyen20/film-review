@@ -18,7 +18,7 @@ export function TikTokLoginButton() {
         callbackURL: "/",
       });
     } catch (error) {
-      console.error("TikTok authentication failed:", error);
+      console.error("TikTok sign in failed:", error);
     } finally {
       setIsSigningIn(false);
     }
@@ -50,10 +50,7 @@ export function TikTokLoginButton() {
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
           <User className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
-          <span
-            className="max-w-[120px] truncate"
-            title={session.user.name}
-          >
+          <span className="max-w-[120px] truncate" title={session.user.name ?? ""}>
             {session.user.name}
           </span>
         </div>

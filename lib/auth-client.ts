@@ -1,5 +1,7 @@
+// better-auth React client — useSession and other hooks come from "better-auth/react"
 import { createAuthClient } from "better-auth/react";
 
-export const authClient = createAuthClient();
+const authClient = createAuthClient();
 
 export const { useSession, signIn, signOut } = authClient;
+export { authClient };
