@@ -1,19 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { authClient } from "@/lib/auth-client";
+import { useSession, signIn, signOut } from "@/lib/auth-client";
 import { Button } from "./ui/button";
 import { LogOut, User } from "lucide-react";
 
 export function TikTokLoginButton() {
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending } = useSession();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleLogin = async () => {
     try {
       setIsSigningIn(true);
-      await authClient.signIn.social({
+      await signIn.social({
         provider: "tiktok",
         callbackURL: "/",
       });
@@ -27,7 +27,7 @@ export function TikTokLoginButton() {
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true);
-      await authClient.signOut();
+      await signOut();
     } catch (error) {
       console.error("Sign out failed:", error);
     } finally {
@@ -37,7 +37,11 @@ export function TikTokLoginButton() {
 
   if (isPending) {
     return (
-      <div className="h-9 w-24 animate-pulse rounded-md bg-muted" aria-busy="true" aria-label="Loading session" />
+      <div
+        className="h-9 w-24 animate-pulse rounded-md bg-muted"
+        aria-busy="true"
+        aria-label="Loading session"
+      />
     );
   }
 
@@ -46,7 +50,10 @@ export function TikTokLoginButton() {
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
           <User className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
-          <span className="max-w-[120px] truncate" title={session.user.name}>
+          <span
+            className="max-w-[120px] truncate"
+            title={session.user.name}
+          >
             {session.user.name}
           </span>
         </div>
