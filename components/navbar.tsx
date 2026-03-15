@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { TikTokLoginButton } from "./TikTokLoginButton"
+import { authClient } from "@/lib/auth-client"
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -19,6 +20,30 @@ export function Navbar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  
+  // Fetch session state using the authClient instance
+  const { data: session, isPending } = authClient.useSession()
+
+  // Extracted to prevent duplication between desktop and mobile navs
+  const renderAuth = () => {
+    if (isPending) {
+      // Prevents layout shift while checking auth state
+      return <div className="h-9 w-24 animate-pulse bg-muted rounded-md" /> 
+    }
+
+    if (session?.user) {
+      return (
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <User className="h-4 w-4" />
+          </div>
+          <span>{session.user.name}</span>
+        </div>
+      )
+    }
+
+    return <TikTokLoginButton />
+  }
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
@@ -89,7 +114,10 @@ export function Navbar() {
               <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
             </button>
 
-            <div className="hidden sm:flex sm:mx-2"><TikTokLoginButton /></div>
+            {/* Desktop Auth */}
+            <div className="hidden sm:flex sm:mx-2">
+              {renderAuth()}
+            </div>
             
             <button
               className="md:hidden text-muted-foreground hover:text-foreground"
@@ -126,8 +154,9 @@ export function Navbar() {
               )
             })}
           </nav>
-          <div className="mt-4 pt-4 border-t border-border">
-            <TikTokLoginButton />
+          {/* Mobile Auth */}
+          <div className="mt-4 pt-4 border-t border-border flex items-center">
+            {renderAuth()}
           </div>
         </div>
       )}
