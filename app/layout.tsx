@@ -15,9 +15,9 @@ export const metadata: Metadata = {
   keywords: ['movies', 'film reviews', 'trending films', 'movie ratings', 'cinema'],
   icons: {
     icon: [
-      { url: '/icon-light-32x32.png', media: '(prefers-color-scheme: light)' },
-      { url: '/icon-dark-32x32.png', media: '(prefers-color-scheme: dark)' },
-      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-32x32.png', media: '(prefers-color-scheme: light)' },
+      { url: '/favicon-32x32.png', media: '(prefers-color-scheme: dark)' },
+      { url: '/favicon.ico', type: 'image/x-icon' },
     ],
     apple: '/apple-icon.png',
   },

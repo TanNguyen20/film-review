@@ -50,13 +50,13 @@ export function Navbar() {
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
               <User className="h-4 w-4" />
             </div>
-            <span className="max-w-[100px] truncate sm:max-w-[150px]">{session.user.name}</span>
+            <span className="max-w-25 truncate sm:max-w-37.5">{session.user.name}</span>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            size="sm"
             onClick={handleSignOut}
-            className="text-muted-foreground hover:text-foreground px-2"
+            aria-label="Sign Out"
+            className="sm:flex w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
           >
             <LogOut className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Sign Out</span>

@@ -12,7 +12,7 @@ export function TikTokLoginButton() {
       setIsPending(true);
       await authClient.signIn.social({
         provider: "tiktok",
-        callbackURL: "/", // Target redirect route upon successful login
+        callbackURL: "/",
       });
     } catch (error) {
       console.error("TikTok authentication failed:", error);
@@ -25,7 +25,7 @@ export function TikTokLoginButton() {
     <Button
       onClick={handleLogin}
       disabled={isPending}
-      className="w-2 sm:flex w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
+      className="sm:flex w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
       aria-label="Sign in with TikTok"
     >
       {isPending ? "Connecting..." : "Sign in with TikTok"}
