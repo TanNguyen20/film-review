@@ -56,7 +56,7 @@ export function Navbar() {
             size="sm"
             onClick={handleSignOut}
             aria-label="Sign Out"
-            className="sm:flex w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
+            className="flex bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
           >
             <LogOut className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Sign Out</span>
