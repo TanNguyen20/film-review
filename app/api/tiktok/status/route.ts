@@ -61,10 +61,18 @@ export async function POST(req: NextRequest) {
         FAILED: "failed",
       };
       const mappedStatus = statusMap[data.data.status] || data.data.status;
+      
+      const uploadedVideoId = data.data.uploaded_video_id || null;
+      const publicUrl = data.data.public_url || null;
 
       await query(
-        `UPDATE tiktok_videos SET status = $1, updated_at = NOW() WHERE tiktok_publish_id = $2`,
-        [mappedStatus, publish_id]
+        `UPDATE tiktok_videos 
+         SET status = $1, 
+             updated_at = NOW(),
+             tiktok_video_id = COALESCE($3, tiktok_video_id),
+             tiktok_video_url = COALESCE($4, tiktok_video_url)
+         WHERE tiktok_publish_id = $2`,
+        [mappedStatus, publish_id, uploadedVideoId, publicUrl]
       );
     }
 
