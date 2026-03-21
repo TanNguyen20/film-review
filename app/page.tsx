@@ -6,6 +6,7 @@ import { HeroSection } from "@/components/hero-section"
 import { TrendingSection } from "@/components/trending-section"
 import { ReviewSection } from "@/components/review-section"
 import { CommunityStats } from "@/components/community-stats"
+import { VideoSection } from "@/components/video-section"
 import { MovieModal } from "@/components/movie-modal"
 import { Footer } from "@/components/footer"
 import type { Movie } from "@/lib/movies"
@@ -20,6 +21,7 @@ export default function HomePage() {
         <HeroSection />
         <TrendingSection onMovieSelect={setSelectedMovie} />
         <CommunityStats />
+        <VideoSection />
         <ReviewSection />
       </div>
       <Footer />
@@ -27,3 +29,4 @@ export default function HomePage() {
     </main>
   )
 }
+
