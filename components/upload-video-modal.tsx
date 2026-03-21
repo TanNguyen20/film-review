@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   AlertCircle,
   FileVideo,
+  ChevronDown,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -21,10 +22,13 @@ interface UploadVideoModalProps {
 
 type UploadState = "idle" | "loading-info" | "ready" | "uploading" | "success" | "error"
 
+const GENRE_OPTIONS = ["Action", "Drama", "Sci-Fi", "Horror", "Comedy", "Fantasy", "Thriller", "Romance", "Documentary"]
+
 export function UploadVideoModal({ open, onClose, onSuccess }: UploadVideoModalProps) {
   const [state, setState] = useState<UploadState>("idle")
   const [errorMsg, setErrorMsg] = useState("")
   const [title, setTitle] = useState("")
+  const [genre, setGenre] = useState("")
   const [privacyLevel, setPrivacyLevel] = useState("SELF_ONLY")
   const [privacyOptions, setPrivacyOptions] = useState<string[]>(["SELF_ONLY"])
   const [disableComment, setDisableComment] = useState(false)
@@ -38,6 +42,7 @@ export function UploadVideoModal({ open, onClose, onSuccess }: UploadVideoModalP
     setState("idle")
     setErrorMsg("")
     setTitle("")
+    setGenre("")
     setPrivacyLevel("SELF_ONLY")
     setDisableComment(false)
     setDisableDuet(false)
@@ -110,6 +115,7 @@ export function UploadVideoModal({ open, onClose, onSuccess }: UploadVideoModalP
       const formData = new FormData()
       formData.append("video", selectedFile)
       formData.append("title", title.trim())
+      formData.append("genre", genre)
       formData.append("privacy_level", privacyLevel)
       formData.append("disable_comment", String(disableComment))
       formData.append("disable_duet", String(disableDuet))
@@ -294,6 +300,27 @@ export function UploadVideoModal({ open, onClose, onSuccess }: UploadVideoModalP
                 <p className="text-xs text-muted-foreground/60 mt-1 text-right">
                   {title.length}/2200
                 </p>
+              </div>
+
+              {/* Genre */}
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                  Film Genre
+                </label>
+                <div className="relative">
+                  <select
+                    value={genre}
+                    onChange={(e) => setGenre(e.target.value)}
+                    disabled={state === "uploading"}
+                    className="w-full appearance-none bg-muted border border-border text-foreground text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary/50 transition disabled:opacity-50"
+                  >
+                    <option value="">Select a genre...</option>
+                    {GENRE_OPTIONS.map((g) => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                </div>
               </div>
 
               {/* Privacy */}

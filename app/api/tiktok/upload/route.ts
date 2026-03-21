@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const videoFile = formData.get("video") as File | null;
     const title = (formData.get("title") as string) || "";
+    const genre = (formData.get("genre") as string) || "";
     const privacyLevel =
       (formData.get("privacy_level") as string) || "SELF_ONLY";
     const disableComment = formData.get("disable_comment") === "true";
@@ -169,14 +170,15 @@ export async function POST(req: NextRequest) {
     await initDatabase();
 
     const insertResult = await query(
-      `INSERT INTO tiktok_videos (user_id, tiktok_publish_id, title, description, privacy_level, video_filename, video_size, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'published')
+      `INSERT INTO tiktok_videos (user_id, tiktok_publish_id, title, description, genre, privacy_level, video_filename, video_size, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'published')
        RETURNING id`,
       [
         session.user.id,
         publish_id,
         title,
         title,
+        genre,
         privacyLevel,
         videoFile.name,
         videoSize,

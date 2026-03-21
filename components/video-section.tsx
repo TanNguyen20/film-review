@@ -6,36 +6,33 @@ import {
   Upload,
   Clock,
   Shield,
-  CheckCircle2,
   Loader2,
-  AlertCircle,
   FileVideo,
   RefreshCw,
+  Play,
+  X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { UploadVideoModal } from "@/components/upload-video-modal"
+import { TikTokEmbed } from "@/components/tiktok-embed"
 import { authClient } from "@/lib/auth-client"
 
 interface TikTokVideo {
   id: string
   user_id: string
   tiktok_publish_id: string
+  tiktok_video_id: string
+  tiktok_video_url: string
   title: string
   description: string
+  genre: string
   privacy_level: string
   video_filename: string
   video_size: number
   status: string
   created_at: string
   updated_at: string
-}
-
-const statusConfig: Record<string, { icon: typeof CheckCircle2; color: string; label: string }> = {
-  published: { icon: CheckCircle2, color: "text-emerald-400", label: "Published" },
-  uploading: { icon: Loader2, color: "text-amber-400", label: "Processing" },
-  pending: { icon: Clock, color: "text-muted-foreground", label: "Pending" },
-  failed: { icon: AlertCircle, color: "text-red-400", label: "Failed" },
 }
 
 const privacyLabelMap: Record<string, string> = {
@@ -67,10 +64,93 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString()
 }
 
-function VideoCard({ video }: { video: TikTokVideo }) {
-  const config = statusConfig[video.status] || statusConfig.pending
-  const StatusIcon = config.icon
+function VideoEmbedInline({
+  video,
+  onClose,
+}: {
+  video: TikTokVideo
+  onClose: () => void
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose()
+    }
+    document.addEventListener("keydown", onKey)
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.removeEventListener("keydown", onKey)
+      document.body.style.overflow = ""
+    }
+  }, [onClose])
 
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Watch ${video.title}`}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
+      <div
+        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="relative z-10 w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border shrink-0">
+          <div className="min-w-0 flex-1">
+            <h2 className="font-serif text-lg font-bold text-foreground truncate">
+              {video.title || "Film Review"}
+            </h2>
+            {video.genre && (
+              <span className="text-xs text-primary font-semibold">
+                {video.genre}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0 ml-3"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="overflow-y-auto">
+          {video.tiktok_video_id ? (
+            <TikTokEmbed
+              videoId={video.tiktok_video_id}
+              className="rounded-none"
+            />
+          ) : (
+            <div className="flex flex-col items-center gap-3 py-16 px-6 text-center">
+              <Video className="h-12 w-12 text-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground">
+                This video is still processing on TikTok.
+              </p>
+              {video.tiktok_video_url && (
+                <a
+                  href={video.tiktok_video_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:underline font-medium"
+                >
+                  View on TikTok →
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function VideoCard({
+  video,
+  onWatch,
+}: {
+  video: TikTokVideo
+  onWatch: () => void
+}) {
   return (
     <article className="rounded-xl bg-card border border-border p-5 flex flex-col gap-3 hover:border-primary/30 transition-colors">
       {/* Header */}
@@ -80,14 +160,19 @@ function VideoCard({ video }: { video: TikTokVideo }) {
             <FileVideo className="h-5 w-5 text-primary" />
           </div>
           <div className="min-w-0">
-            <p className="font-semibold text-foreground text-sm truncate">{video.title || "Untitled"}</p>
-            <p className="text-xs text-muted-foreground truncate">{video.video_filename || "Video"}</p>
+            <p className="font-semibold text-foreground text-sm truncate">
+              {video.title || "Untitled"}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {video.video_filename || "Video"}
+            </p>
           </div>
         </div>
-        <div className={cn("flex items-center gap-1.5 shrink-0 rounded-full px-2.5 py-1 bg-muted", config.color)}>
-          <StatusIcon className={cn("h-3.5 w-3.5", video.status === "uploading" && "animate-spin")} />
-          <span className="text-xs font-semibold">{config.label}</span>
-        </div>
+        {video.genre && (
+          <span className="text-[10px] font-bold text-primary bg-primary/10 rounded-full px-2 py-0.5 shrink-0 uppercase">
+            {video.genre}
+          </span>
+        )}
       </div>
 
       {/* Details */}
@@ -107,8 +192,20 @@ function VideoCard({ video }: { video: TikTokVideo }) {
 
       {/* Description */}
       {video.description && (
-        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">{video.description}</p>
+        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+          {video.description}
+        </p>
       )}
+
+      {/* Watch button */}
+      <Button
+        size="sm"
+        onClick={onWatch}
+        className="w-fit gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold mt-1"
+      >
+        <Play className="h-3.5 w-3.5 fill-primary-foreground" />
+        Watch Review
+      </Button>
     </article>
   )
 }
@@ -117,6 +214,7 @@ export function VideoSection() {
   const [videos, setVideos] = useState<TikTokVideo[]>([])
   const [loading, setLoading] = useState(true)
   const [uploadOpen, setUploadOpen] = useState(false)
+  const [watchVideo, setWatchVideo] = useState<TikTokVideo | null>(null)
   const { data: session } = authClient.useSession()
 
   const fetchVideos = useCallback(async () => {
@@ -150,9 +248,13 @@ export function VideoSection() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Video className="h-5 w-5 text-primary" />
-              <span className="text-xs font-bold uppercase tracking-widest text-primary">TikTok</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-primary">
+                TikTok
+              </span>
             </div>
-            <h2 className="font-serif text-3xl font-bold text-foreground">Uploaded Videos</h2>
+            <h2 className="font-serif text-3xl font-bold text-foreground">
+              Video Reviews
+            </h2>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -209,11 +311,23 @@ export function VideoSection() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {videos.map((video) => (
-              <VideoCard key={video.id} video={video} />
+              <VideoCard
+                key={video.id}
+                video={video}
+                onWatch={() => setWatchVideo(video)}
+              />
             ))}
           </div>
         )}
       </div>
+
+      {/* Watch modal */}
+      {watchVideo && (
+        <VideoEmbedInline
+          video={watchVideo}
+          onClose={() => setWatchVideo(null)}
+        />
+      )}
 
       {/* Upload modal */}
       <UploadVideoModal

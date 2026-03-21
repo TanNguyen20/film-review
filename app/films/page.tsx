@@ -1,0 +1,483 @@
+"use client"
+
+import { useState, useEffect, useCallback } from "react"
+import {
+  Film,
+  Play,
+  Clock,
+  Shield,
+  Filter,
+  SortAsc,
+  Loader2,
+  Video,
+  Upload,
+  X,
+  Search,
+  RefreshCw,
+} from "lucide-react"
+import { Navbar } from "@/components/navbar"
+import { Footer } from "@/components/footer"
+import { Button } from "@/components/ui/button"
+import { TikTokEmbed } from "@/components/tiktok-embed"
+import { UploadVideoModal } from "@/components/upload-video-modal"
+import { authClient } from "@/lib/auth-client"
+import { cn } from "@/lib/utils"
+
+interface TikTokVideo {
+  id: string
+  user_id: string
+  tiktok_publish_id: string
+  tiktok_video_id: string
+  tiktok_video_url: string
+  title: string
+  description: string
+  genre: string
+  privacy_level: string
+  video_filename: string
+  video_size: number
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+const GENRES = ["All", "Action", "Drama", "Sci-Fi", "Horror", "Comedy", "Fantasy", "Thriller", "Romance", "Documentary"]
+const SORT_OPTIONS = ["Newest", "Oldest", "Title A-Z"] as const
+type SortOption = (typeof SORT_OPTIONS)[number]
+
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+
+  if (minutes < 1) return "Just now"
+  if (minutes < 60) return `${minutes}m ago`
+  if (hours < 24) return `${hours}h ago`
+  if (days < 7) return `${days}d ago`
+  return date.toLocaleDateString()
+}
+
+const privacyLabelMap: Record<string, string> = {
+  PUBLIC_TO_EVERYONE: "Public",
+  MUTUAL_FOLLOW_FRIENDS: "Friends",
+  FOLLOWER_OF_CREATOR: "Followers",
+  SELF_ONLY: "Only Me",
+}
+
+function VideoCard({
+  video,
+  onClick,
+}: {
+  video: TikTokVideo
+  onClick: () => void
+}) {
+  return (
+    <article
+      onClick={onClick}
+      className="group relative cursor-pointer rounded-xl overflow-hidden bg-card border border-border hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10"
+    >
+      {/* Thumbnail area */}
+      <div className="relative aspect-[9/16] max-h-[280px] overflow-hidden bg-gradient-to-br from-primary/20 via-muted to-primary/5">
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-2 text-muted-foreground/60">
+            <Video className="h-10 w-10" />
+            <span className="text-xs font-medium">TikTok Review</span>
+          </div>
+        </div>
+        {/* Play overlay on hover */}
+        <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+          <div className="h-14 w-14 rounded-full bg-primary/90 flex items-center justify-center shadow-2xl shadow-primary/30 group-hover:scale-110 transition-transform">
+            <Play className="h-6 w-6 fill-primary-foreground text-primary-foreground ml-0.5" />
+          </div>
+        </div>
+        {/* Genre badge */}
+        {video.genre && (
+          <div className="absolute top-2 left-2 rounded-full bg-primary/90 px-2.5 py-0.5">
+            <span className="text-[10px] font-bold text-primary-foreground uppercase tracking-wider">
+              {video.genre}
+            </span>
+          </div>
+        )}
+        {/* Status badge */}
+        {video.status === "published" && (
+          <div className="absolute top-2 right-2 rounded-full bg-emerald-500/90 px-2 py-0.5">
+            <span className="text-[10px] font-bold text-white">LIVE</span>
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="p-3">
+        <h3 className="font-semibold text-foreground text-sm truncate leading-tight">
+          {video.title || "Untitled Review"}
+        </h3>
+        {video.description && (
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+            {video.description}
+          </p>
+        )}
+        <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            <span className="text-xs">{formatDate(video.created_at)}</span>
+          </div>
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <Shield className="h-3 w-3" />
+            <span className="text-xs">
+              {privacyLabelMap[video.privacy_level] || video.privacy_level}
+            </span>
+          </div>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+function VideoEmbedModal({
+  video,
+  onClose,
+}: {
+  video: TikTokVideo
+  onClose: () => void
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose()
+    }
+    document.addEventListener("keydown", onKey)
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.removeEventListener("keydown", onKey)
+      document.body.style.overflow = ""
+    }
+  }, [onClose])
+
+  const hasVideoId = !!video.tiktok_video_id
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Watch ${video.title}`}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Panel */}
+      <div className="relative z-10 w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border shrink-0">
+          <div className="min-w-0 flex-1">
+            <h2 className="font-serif text-lg font-bold text-foreground truncate">
+              {video.title || "Film Review"}
+            </h2>
+            <div className="flex items-center gap-2 mt-0.5">
+              {video.genre && (
+                <span className="text-xs text-primary font-semibold">
+                  {video.genre}
+                </span>
+              )}
+              <span className="text-xs text-muted-foreground">
+                {formatDate(video.created_at)}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0 ml-3"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Video Embed */}
+        <div className="overflow-y-auto">
+          {hasVideoId ? (
+            <TikTokEmbed
+              videoId={video.tiktok_video_id}
+              className="rounded-none"
+            />
+          ) : (
+            <div className="flex flex-col items-center gap-3 py-16 px-6 text-center">
+              <Video className="h-12 w-12 text-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground">
+                This video doesn&apos;t have a TikTok video ID yet. It may still
+                be processing on TikTok.
+              </p>
+              {video.tiktok_video_url && (
+                <a
+                  href={video.tiktok_video_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:underline font-medium"
+                >
+                  View on TikTok →
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* Description */}
+          {video.description && (
+            <div className="px-5 py-4 border-t border-border">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {video.description}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function FilmsPage() {
+  const [videos, setVideos] = useState<TikTokVideo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [activeGenre, setActiveGenre] = useState("All")
+  const [activeSort, setActiveSort] = useState<SortOption>("Newest")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedVideo, setSelectedVideo] = useState<TikTokVideo | null>(null)
+  const [uploadOpen, setUploadOpen] = useState(false)
+  const { data: session } = authClient.useSession()
+
+  const fetchVideos = useCallback(async () => {
+    try {
+      setLoading(true)
+      const res = await fetch("/api/videos")
+      const json = await res.json()
+      if (json.videos) {
+        setVideos(json.videos)
+      }
+    } catch (err) {
+      console.error("Failed to fetch videos:", err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchVideos()
+  }, [fetchVideos])
+
+  // Filter
+  let filtered = videos
+  if (activeGenre !== "All") {
+    filtered = filtered.filter(
+      (v) => v.genre?.toLowerCase() === activeGenre.toLowerCase()
+    )
+  }
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase()
+    filtered = filtered.filter(
+      (v) =>
+        v.title?.toLowerCase().includes(q) ||
+        v.description?.toLowerCase().includes(q)
+    )
+  }
+
+  // Sort
+  const sorted = [...filtered].sort((a, b) => {
+    switch (activeSort) {
+      case "Oldest":
+        return (
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        )
+      case "Title A-Z":
+        return (a.title || "").localeCompare(b.title || "")
+      default:
+        return (
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+    }
+  })
+
+  return (
+    <main className="min-h-screen bg-background">
+      <Navbar />
+      <div className="pt-16">
+        {/* Page header */}
+        <section className="border-b border-border bg-card">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+            <div className="flex items-center gap-2 mb-2">
+              <Film className="h-5 w-5 text-primary" />
+              <span className="text-xs font-bold uppercase tracking-widest text-primary">
+                Community Reviews
+              </span>
+            </div>
+            <h1 className="font-serif text-4xl sm:text-5xl font-bold text-foreground text-balance">
+              Film Reviews
+            </h1>
+            <p className="text-muted-foreground mt-3 text-pretty max-w-lg">
+              Watch TikTok video reviews from our community. Discover honest
+              takes on the latest films, filter by genre, and share your own
+              reviews.
+            </p>
+          </div>
+        </section>
+
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+          {/* Toolbar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div className="flex flex-wrap gap-2">
+              {GENRES.map((genre) => (
+                <button
+                  key={genre}
+                  onClick={() => setActiveGenre(genre)}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-xs font-semibold transition-colors",
+                    activeGenre === genre
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {genre}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search reviews..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="h-8 w-44 bg-muted border border-border text-foreground text-xs rounded-lg pl-8 pr-3 focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-muted-foreground"
+                />
+              </div>
+              {/* Sort */}
+              <div className="flex items-center gap-1.5">
+                <SortAsc className="h-3.5 w-3.5 text-muted-foreground" />
+                <select
+                  value={activeSort}
+                  onChange={(e) =>
+                    setActiveSort(e.target.value as SortOption)
+                  }
+                  className="bg-muted border border-border text-foreground text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  {SORT_OPTIONS.map((opt) => (
+                    <option key={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions row */}
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <Filter className="h-3.5 w-3.5" />
+              {sorted.length} review{sorted.length !== 1 ? "s" : ""} found
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchVideos}
+                className="gap-1.5 border-border text-muted-foreground hover:text-foreground"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Refresh
+              </Button>
+              {session?.user && (
+                <Button
+                  size="sm"
+                  onClick={() => setUploadOpen(true)}
+                  className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  Upload Review
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Content */}
+          {loading ? (
+            <div className="flex flex-col items-center gap-3 py-24">
+              <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              <p className="text-sm text-muted-foreground">
+                Loading film reviews...
+              </p>
+            </div>
+          ) : sorted.length === 0 ? (
+            <div className="flex flex-col items-center gap-4 py-24 rounded-xl bg-card border border-border">
+              <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
+                <Film className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <div className="text-center">
+                <p className="font-semibold text-foreground">
+                  No reviews found
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {videos.length > 0
+                    ? "Try adjusting your filters or search query."
+                    : session?.user
+                      ? "Be the first to upload a film review!"
+                      : "Sign in with TikTok to upload film reviews."}
+                </p>
+              </div>
+              {videos.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setActiveGenre("All")
+                    setSearchQuery("")
+                  }}
+                  className="border-border text-foreground hover:bg-muted"
+                >
+                  Clear Filters
+                </Button>
+              )}
+              {videos.length === 0 && session?.user && (
+                <Button
+                  onClick={() => setUploadOpen(true)}
+                  className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold mt-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Upload Your First Review
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+              {sorted.map((video) => (
+                <VideoCard
+                  key={video.id}
+                  video={video}
+                  onClick={() => setSelectedVideo(video)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      <Footer />
+
+      {/* Embed modal */}
+      {selectedVideo && (
+        <VideoEmbedModal
+          video={selectedVideo}
+          onClose={() => setSelectedVideo(null)}
+        />
+      )}
+
+      {/* Upload modal */}
+      <UploadVideoModal
+        open={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        onSuccess={fetchVideos}
+      />
+    </main>
+  )
+}

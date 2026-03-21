@@ -12,6 +12,7 @@ import { authClient } from "@/lib/auth-client"
 
 const navLinks = [
   { label: "Home", href: "/" },
+  { label: "Films", href: "/films" },
   { label: "Trending", href: "/trending" },
   { label: "Reviews", href: "/reviews" },
 ]
