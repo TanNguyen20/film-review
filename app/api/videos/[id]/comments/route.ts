@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { query } from "@/lib/db";
 import { headers } from "next/headers";
 import { initDatabase } from "@/lib/init-db";
+import { createNotification } from "@/lib/notifications";
 
 export async function GET(
   _req: NextRequest,
@@ -67,6 +68,27 @@ export async function POST(
        RETURNING id, user_id, user_name, content, created_at`,
       [id, session.user.id, session.user.name || "Anonymous", content]
     );
+
+    // Create notification for video owner
+    try {
+      const videoResult = await query(
+        `SELECT user_id, title FROM tiktok_videos WHERE id = $1`,
+        [id]
+      );
+      const video = videoResult.rows[0];
+      if (video && video.user_id !== session.user.id) {
+        await createNotification({
+          userId: video.user_id as string,
+          actorName: session.user.name || "Someone",
+          type: "comment",
+          videoId: id,
+          videoTitle: (video.title as string) || "your video",
+          message: `${session.user.name || "Someone"} commented on "${(video.title as string) || "your video"}"`,
+        });
+      }
+    } catch (notifErr) {
+      console.error("Failed to create comment notification:", notifErr);
+    }
 
     return NextResponse.json({ comment: result.rows[0] }, { status: 201 });
   } catch (error) {

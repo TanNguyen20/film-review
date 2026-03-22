@@ -46,4 +46,19 @@ export async function initDatabase() {
       UNIQUE(video_id, user_id)
     );
   `);
+
+  // Notifications
+  await query(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      actor_name TEXT NOT NULL DEFAULT 'Someone',
+      type TEXT NOT NULL,
+      video_id UUID REFERENCES tiktok_videos(id) ON DELETE CASCADE,
+      video_title TEXT,
+      message TEXT NOT NULL,
+      read BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
 }

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { TikTokLoginButton } from "./TikTokLoginButton"
 import { authClient } from "@/lib/auth-client"
+import { NotificationDropdown } from "./notification-dropdown"
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -130,13 +131,9 @@ export function Navbar() {
                 <Search className="h-5 w-5" />
               </button>
             )}
-            <button
-              className="hidden sm:block text-muted-foreground hover:text-foreground transition-colors relative"
-              aria-label="Notifications"
-            >
-              <Bell className="h-5 w-5" />
-              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
-            </button>
+            {session?.user && (
+              <NotificationDropdown />
+            )}
 
             {/* Desktop Auth */}
             <div className="hidden sm:flex sm:mx-2">

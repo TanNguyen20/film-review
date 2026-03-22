@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { query } from "@/lib/db";
 import { headers } from "next/headers";
 import { initDatabase } from "@/lib/init-db";
+import { createNotification } from "@/lib/notifications";
 
 export async function GET(
   req: NextRequest,
@@ -75,6 +76,27 @@ export async function POST(
         `INSERT INTO video_likes (video_id, user_id) VALUES ($1, $2)`,
         [id, session.user.id]
       );
+
+      // Create notification for video owner
+      try {
+        const videoResult = await query(
+          `SELECT user_id, title FROM tiktok_videos WHERE id = $1`,
+          [id]
+        );
+        const video = videoResult.rows[0];
+        if (video && video.user_id !== session.user.id) {
+          await createNotification({
+            userId: video.user_id as string,
+            actorName: session.user.name || "Someone",
+            type: "like",
+            videoId: id,
+            videoTitle: (video.title as string) || "your video",
+            message: `${session.user.name || "Someone"} liked "${(video.title as string) || "your video"}"`,
+          });
+        }
+      } catch (notifErr) {
+        console.error("Failed to create like notification:", notifErr);
+      }
     }
 
     // Return updated count
