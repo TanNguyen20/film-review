@@ -94,7 +94,7 @@ function VideoCard({
       className="group relative cursor-pointer rounded-xl overflow-hidden bg-card border border-border hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10"
     >
       {/* Thumbnail area */}
-      <div className="relative aspect-[9/16] max-h-[280px] overflow-hidden bg-gradient-to-br from-primary/20 via-muted to-primary/5">
+      <div className="relative aspect-[9/16] max-h-[280px] w-full overflow-hidden bg-gradient-to-br from-primary/20 via-muted to-primary/5">
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="flex flex-col items-center gap-2 text-muted-foreground/60">
             <Video className="h-10 w-10" />
