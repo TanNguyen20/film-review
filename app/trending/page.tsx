@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
+import { useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { TrendingUp, Star, Play, Plus, Filter, SortAsc, Flame, Clock, Film } from "lucide-react"
+import { TrendingUp, Star, Play, Plus, Filter, SortAsc, Flame, Clock, Film, Heart, Video } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { MovieModal } from "@/components/movie-modal"
@@ -25,6 +26,41 @@ function sortMovies(movies: Movie[], sort: SortOption): Movie[] {
     default:
       return [...movies].sort((a, b) => a.rank - b.rank)
   }
+}
+
+interface TikTokVideo {
+  id: string
+  title: string
+  genre: string
+  likes_count: number
+  comments_count: number
+}
+
+function TopVideoRow({ video, index }: { video: TikTokVideo; index: number }) {
+  return (
+    <article className="flex items-center gap-4 rounded-xl bg-card border border-border p-4 hover:border-primary/50 transition-all">
+      <span className="font-serif text-3xl font-bold text-muted-foreground/30 w-8 shrink-0 text-center leading-none">
+        {index + 1}
+      </span>
+      <div className="relative h-16 w-11 rounded-md overflow-hidden shrink-0 bg-muted flex items-center justify-center">
+        <Video className="h-5 w-5 text-muted-foreground/50" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <Link href={`/films?q=${encodeURIComponent(video.title || "")}`}>
+          <h3 className="font-semibold text-foreground text-sm truncate hover:text-primary transition-colors">
+            {video.title || "Untitled"}
+          </h3>
+        </Link>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-xs text-muted-foreground">{video.genre || "-"}</span>
+        </div>
+      </div>
+      <div className="flex items-center gap-1 shrink-0">
+        <Heart className="h-3.5 w-3.5 fill-rose-500 text-rose-500" />
+        <span className="text-primary text-sm font-bold">{video.likes_count || 0}</span>
+      </div>
+    </article>
+  )
 }
 
 function MovieCard({ movie, onSelect }: { movie: Movie; onSelect: (m: Movie) => void }) {
@@ -150,10 +186,24 @@ export default function TrendingPage() {
   const [activeGenre, setActiveGenre] = useState("All")
   const [activeSort, setActiveSort] = useState<SortOption>("Trending")
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null)
+  const [topRatedVideos, setTopRatedVideos] = useState<TikTokVideo[]>([])
 
-  const filtered = activeGenre === "All" ? MOVIES : MOVIES.filter((m) => m.genreList.includes(activeGenre))
+  useEffect(() => {
+    fetch("/api/videos")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.videos) {
+          const sorted = [...data.videos].sort(
+            (a, b) => (b.likes_count || 0) - (a.likes_count || 0)
+          )
+          setTopRatedVideos(sorted.slice(0, 5))
+        }
+      })
+      .catch((err) => console.error("Failed to fetch top rated:", err))
+  }, [])
+
+  const filtered = activeGenre === "All" ? MOVIES : MOVIES.filter((m) => m.genreList?.includes(activeGenre))
   const sorted = sortMovies(filtered, activeSort)
-  const topFive = sortMovies(MOVIES, "Highest Rated").slice(0, 5)
 
   return (
     <main className="min-h-screen bg-background">
@@ -247,9 +297,15 @@ export default function TrendingPage() {
                   <h2 className="font-serif text-lg font-bold text-foreground">Top Rated</h2>
                 </div>
                 <div className="flex flex-col gap-3">
-                  {topFive.map((movie, i) => (
-                    <TopMovieRow key={movie.id} movie={movie} index={i} onSelect={setSelectedMovie} />
-                  ))}
+                  {topRatedVideos.length > 0 ? (
+                    topRatedVideos.map((video, i) => (
+                      <TopVideoRow key={video.id} video={video} index={i} />
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-sm text-muted-foreground border border-dashed border-border rounded-xl">
+                      Loading top rated films...
+                    </div>
+                  )}
                 </div>
 
                 {/* CTA */}
