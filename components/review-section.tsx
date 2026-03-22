@@ -1,87 +1,84 @@
 "use client"
 
-import { useState } from "react"
-import { Star, ThumbsUp, MessageCircle, Share2, Send } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { Star, ThumbsUp, MessageCircle, Share2, Send, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { authClient } from "@/lib/auth-client"
 
-const reviews = [
-  {
-    id: 1,
-    user: "Alex M.",
-    avatar: "AM",
-    avatarColor: "bg-primary/30 text-primary",
-    movie: "Stellar Horizon",
-    rating: 9,
-    date: "2 days ago",
-    content:
-      "An absolute masterpiece of modern science fiction. The world-building is breathtaking and the emotional core of the story hits you right in the chest. I haven't felt this way since Interstellar. The cinematography alone deserves every award this season.",
-    likes: 284,
-    comments: 47,
-    liked: false,
-  },
-  {
-    id: 2,
-    user: "Priya K.",
-    avatar: "PK",
-    avatarColor: "bg-rose-500/20 text-rose-400",
-    movie: "Neon Shadows",
-    rating: 8,
-    date: "5 days ago",
-    content:
-      "Neon Shadows nails the neo-noir aesthetic perfectly. Every frame feels like a painting. The lead performance is magnetic — you can't look away. The third act loses a bit of steam, but the ride there is absolutely exhilarating.",
-    likes: 196,
-    comments: 31,
-    liked: false,
-  },
-  {
-    id: 3,
-    user: "Jordan T.",
-    avatar: "JT",
-    avatarColor: "bg-sky-500/20 text-sky-400",
-    movie: "Ember Throne",
-    rating: 10,
-    date: "1 week ago",
-    content:
-      "I've never been so emotionally devastated and uplifted at the same time. Ember Throne transcends the fantasy genre entirely. The dragon sequences are practical-effects magic. My film of the decade. Period.",
-    likes: 523,
-    comments: 89,
-    liked: true,
-  },
-]
-
-function StarPicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  const [hover, setHover] = useState(0)
-  return (
-    <div className="flex gap-1">
-      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
-        <button
-          key={i}
-          onMouseEnter={() => setHover(i)}
-          onMouseLeave={() => setHover(0)}
-          onClick={() => onChange(i)}
-          className="transition-transform hover:scale-110"
-          aria-label={`Rate ${i} out of 10`}
-        >
-          <Star
-            className={cn(
-              "h-5 w-5 transition-colors",
-              (hover || value) >= i ? "fill-primary text-primary" : "text-muted-foreground"
-            )}
-          />
-        </button>
-      ))}
-    </div>
-  )
+interface ReviewComment {
+  id: string
+  video_id: string
+  user_id: string
+  user_name: string
+  content: string
+  created_at: string
+  video_title: string
+  video_genre: string
+  likes_count: number
+  comments_count: number
 }
 
-function ReviewCard({ review }: { review: typeof reviews[0] }) {
-  const [likes, setLikes] = useState(review.likes)
-  const [liked, setLiked] = useState(review.liked)
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
 
-  const handleLike = () => {
-    setLiked(!liked)
-    setLikes((l) => (liked ? l - 1 : l + 1))
+  if (minutes < 1) return "Just now"
+  if (minutes < 60) return `${minutes}m ago`
+  if (hours < 24) return `${hours}h ago`
+  if (days < 7) return `${days}d ago`
+  return date.toLocaleDateString()
+}
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase()
+}
+
+const avatarColors = [
+  "bg-primary/30 text-primary",
+  "bg-rose-500/20 text-rose-400",
+  "bg-sky-500/20 text-sky-400",
+  "bg-emerald-500/20 text-emerald-400",
+  "bg-amber-500/20 text-amber-400",
+  "bg-indigo-500/20 text-indigo-400",
+]
+
+function getAvatarColor(userId: string): string {
+  let hash = 0
+  for (let i = 0; i < userId.length; i++) {
+    hash = userId.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return avatarColors[Math.abs(hash) % avatarColors.length]
+}
+
+function ReviewCard({ review }: { review: ReviewComment }) {
+  const [liked, setLiked] = useState(false)
+  const [likesCount, setLikesCount] = useState(review.likes_count)
+
+  const handleLike = async () => {
+    try {
+      const res = await fetch(`/api/videos/${review.video_id}/likes`, {
+        method: "POST",
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setLiked(data.liked)
+        setLikesCount(data.count)
+      }
+    } catch {
+      // toggle locally as fallback
+      setLiked(!liked)
+      setLikesCount((l) => (liked ? l - 1 : l + 1))
+    }
   }
 
   return (
@@ -89,24 +86,25 @@ function ReviewCard({ review }: { review: typeof reviews[0] }) {
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className={cn("h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0", review.avatarColor)}>
-            {review.avatar}
+          <div className={cn("h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0", getAvatarColor(review.user_id))}>
+            {getInitials(review.user_name)}
           </div>
           <div>
-            <p className="font-semibold text-foreground text-sm">{review.user}</p>
-            <p className="text-xs text-muted-foreground">{review.date}</p>
+            <p className="font-semibold text-foreground text-sm">{review.user_name}</p>
+            <p className="text-xs text-muted-foreground">{formatDate(review.created_at)}</p>
           </div>
         </div>
-        <div className="flex items-center gap-1 shrink-0 rounded-full bg-muted px-2 py-1">
-          <Star className="h-3.5 w-3.5 fill-primary text-primary" />
-          <span className="text-xs font-bold text-primary">{review.rating}/10</span>
-        </div>
+        {review.video_genre && (
+          <span className="text-[10px] font-bold text-primary bg-primary/10 rounded-full px-2 py-0.5 shrink-0 uppercase">
+            {review.video_genre}
+          </span>
+        )}
       </div>
 
       {/* Movie tag */}
       <div className="flex items-center gap-1.5">
         <span className="text-xs text-muted-foreground">Review for</span>
-        <span className="text-xs font-semibold text-primary">{review.movie}</span>
+        <span className="text-xs font-semibold text-primary">{review.video_title}</span>
       </div>
 
       {/* Content */}
@@ -122,11 +120,11 @@ function ReviewCard({ review }: { review: typeof reviews[0] }) {
           )}
         >
           <ThumbsUp className={cn("h-4 w-4", liked && "fill-primary")} />
-          {likes}
+          {likesCount}
         </button>
         <button className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
           <MessageCircle className="h-4 w-4" />
-          {review.comments}
+          {review.comments_count}
         </button>
         <button className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors ml-auto">
           <Share2 className="h-4 w-4" />
@@ -138,19 +136,28 @@ function ReviewCard({ review }: { review: typeof reviews[0] }) {
 }
 
 export function ReviewSection() {
-  const [rating, setRating] = useState(0)
-  const [text, setText] = useState("")
-  const [submitted, setSubmitted] = useState(false)
+  const [reviews, setReviews] = useState<ReviewComment[]>([])
+  const [loading, setLoading] = useState(true)
+  const { data: session } = authClient.useSession()
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (text.trim() && rating > 0) {
-      setSubmitted(true)
-      setText("")
-      setRating(0)
-      setTimeout(() => setSubmitted(false), 3000)
+  const fetchReviews = useCallback(async () => {
+    try {
+      setLoading(true)
+      const res = await fetch("/api/comments")
+      const json = await res.json()
+      if (json.comments) {
+        setReviews(json.comments)
+      }
+    } catch (err) {
+      console.error("Failed to fetch reviews:", err)
+    } finally {
+      setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchReviews()
+  }, [fetchReviews])
 
   return (
     <section className="py-16 bg-muted/30">
@@ -161,60 +168,34 @@ export function ReviewSection() {
         </div>
         <h2 className="font-serif text-3xl font-bold text-foreground mb-8">Latest Reviews</h2>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Review list */}
-          <div className="lg:col-span-2 flex flex-col gap-4">
-            {reviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
-            ))}
+        {loading ? (
+          <div className="flex flex-col items-center gap-3 py-16">
+            <Loader2 className="h-8 w-8 text-primary animate-spin" />
+            <p className="text-sm text-muted-foreground">Loading reviews...</p>
           </div>
-
-          {/* Write a review */}
-          <div className="rounded-xl bg-card border border-border p-6 h-fit sticky top-24">
-            <h3 className="font-serif text-xl font-bold text-foreground mb-1">Write a Review</h3>
-            <p className="text-sm text-muted-foreground mb-5">Share your opinion with the community</p>
-
-            {submitted ? (
-              <div className="rounded-lg bg-primary/10 border border-primary/30 px-4 py-6 text-center">
-                <Star className="h-8 w-8 text-primary mx-auto mb-2 fill-primary" />
-                <p className="font-semibold text-foreground">Review submitted!</p>
-                <p className="text-sm text-muted-foreground mt-1">Thanks for sharing your opinion.</p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                    Your Rating
-                  </label>
-                  <StarPicker value={rating} onChange={setRating} />
-                  {rating > 0 && (
-                    <p className="text-xs text-primary mt-1 font-medium">{rating}/10</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                    Your Review
-                  </label>
-                  <textarea
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    placeholder="What did you think about the film..."
-                    rows={5}
-                    className="w-full rounded-lg bg-muted border border-border text-foreground placeholder:text-muted-foreground text-sm px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition leading-relaxed"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={!text.trim() || rating === 0}
-                  className="w-full bg-primary text-primary-foreground font-semibold hover:bg-primary/90 disabled:opacity-40 gap-2"
-                >
-                  <Send className="h-4 w-4" />
-                  Post Review
-                </Button>
-              </form>
-            )}
+        ) : reviews.length === 0 ? (
+          <div className="flex flex-col items-center gap-4 py-16 rounded-xl bg-card border border-border">
+            <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
+              <MessageCircle className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <div className="text-center">
+              <p className="font-semibold text-foreground">No reviews yet</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {session?.user
+                  ? "Be the first to leave a comment on a film review!"
+                  : "Sign in to leave comments on film reviews."}
+              </p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-3 flex flex-col gap-4">
+              {reviews.slice(0, 6).map((review) => (
+                <ReviewCard key={review.id} review={review} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   )

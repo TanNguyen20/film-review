@@ -23,4 +23,27 @@ export async function initDatabase() {
   // Add columns to existing tables (safe to run multiple times)
   await query(`ALTER TABLE tiktok_videos ADD COLUMN IF NOT EXISTS tiktok_video_id TEXT;`);
   await query(`ALTER TABLE tiktok_videos ADD COLUMN IF NOT EXISTS genre TEXT;`);
+
+  // Comments on videos
+  await query(`
+    CREATE TABLE IF NOT EXISTS video_comments (
+      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+      video_id UUID NOT NULL REFERENCES tiktok_videos(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL,
+      user_name TEXT NOT NULL DEFAULT 'Anonymous',
+      content TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
+
+  // Likes on videos (one per user per video)
+  await query(`
+    CREATE TABLE IF NOT EXISTS video_likes (
+      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+      video_id UUID NOT NULL REFERENCES tiktok_videos(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW(),
+      UNIQUE(video_id, user_id)
+    );
+  `);
 }

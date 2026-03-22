@@ -15,6 +15,9 @@ import {
   Search,
   RefreshCw,
   Trash2,
+  Heart,
+  MessageCircle,
+  Send,
 } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -39,6 +42,16 @@ interface TikTokVideo {
   status: string
   created_at: string
   updated_at: string
+  likes_count: number
+  comments_count: number
+}
+
+interface Comment {
+  id: string
+  user_id: string
+  user_name: string
+  content: string
+  created_at: string
 }
 
 const GENRES = ["All", "Action", "Drama", "Sci-Fi", "Horror", "Comedy", "Fantasy", "Thriller", "Romance", "Documentary"]
@@ -120,15 +133,19 @@ function VideoCard({
           </p>
         )}
         <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Heart className="h-3 w-3" />
+              <span className="text-xs">{video.likes_count || 0}</span>
+            </div>
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <MessageCircle className="h-3 w-3" />
+              <span className="text-xs">{video.comments_count || 0}</span>
+            </div>
+          </div>
           <div className="flex items-center gap-1 text-muted-foreground">
             <Clock className="h-3 w-3" />
             <span className="text-xs">{formatDate(video.created_at)}</span>
-          </div>
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <Shield className="h-3 w-3" />
-            <span className="text-xs">
-              {privacyLabelMap[video.privacy_level] || video.privacy_level}
-            </span>
           </div>
         </div>
       </div>
@@ -141,14 +158,23 @@ function VideoEmbedModal({
   onClose,
   onDelete,
   currentUserId,
+  onVideoUpdate,
 }: {
   video: TikTokVideo
   onClose: () => void
   onDelete: (id: string) => Promise<void>
   currentUserId?: string
+  onVideoUpdate: (id: string, updates: Partial<TikTokVideo>) => void
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [liked, setLiked] = useState(false)
+  const [likesCount, setLikesCount] = useState(video.likes_count || 0)
+  const [likingInProgress, setLikingInProgress] = useState(false)
+  const [comments, setComments] = useState<Comment[]>([])
+  const [loadingComments, setLoadingComments] = useState(true)
+  const [commentText, setCommentText] = useState("")
+  const [postingComment, setPostingComment] = useState(false)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -161,6 +187,29 @@ function VideoEmbedModal({
       document.body.style.overflow = ""
     }
   }, [onClose])
+
+  // Fetch like status
+  useEffect(() => {
+    fetch(`/api/videos/${video.id}/likes`)
+      .then((r) => r.json())
+      .then((data) => {
+        setLiked(data.liked)
+        setLikesCount(data.count)
+      })
+      .catch(() => {})
+  }, [video.id])
+
+  // Fetch comments
+  useEffect(() => {
+    setLoadingComments(true)
+    fetch(`/api/videos/${video.id}/comments`)
+      .then((r) => r.json())
+      .then((data) => {
+        setComments(data.comments || [])
+      })
+      .catch(() => {})
+      .finally(() => setLoadingComments(false))
+  }, [video.id])
 
   const hasVideoId = !!video.tiktok_video_id
   const isOwner = currentUserId && video.user_id === currentUserId
@@ -176,6 +225,51 @@ function VideoEmbedModal({
     } catch {
       setDeleting(false)
       setConfirmingDelete(false)
+    }
+  }
+
+  const handleLike = async () => {
+    if (!currentUserId || likingInProgress) return
+    setLikingInProgress(true)
+    try {
+      const res = await fetch(`/api/videos/${video.id}/likes`, {
+        method: "POST",
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setLiked(data.liked)
+        setLikesCount(data.count)
+        onVideoUpdate(video.id, { likes_count: data.count })
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setLikingInProgress(false)
+    }
+  }
+
+  const handlePostComment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!commentText.trim() || !currentUserId || postingComment) return
+    setPostingComment(true)
+    try {
+      const res = await fetch(`/api/videos/${video.id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: commentText.trim() }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setComments((prev) => [data.comment, ...prev])
+        setCommentText("")
+        onVideoUpdate(video.id, {
+          comments_count: (video.comments_count || 0) + 1,
+        })
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setPostingComment(false)
     }
   }
 
@@ -246,8 +340,9 @@ function VideoEmbedModal({
           </div>
         </div>
 
-        {/* Video Embed */}
-        <div className="overflow-y-auto">
+        {/* Scrollable body */}
+        <div className="overflow-y-auto flex-1">
+          {/* Video Embed */}
           {hasVideoId ? (
             <TikTokEmbed
               videoId={video.tiktok_video_id}
@@ -281,6 +376,116 @@ function VideoEmbedModal({
               </p>
             </div>
           )}
+
+          {/* Like bar */}
+          <div className="px-5 py-3 border-t border-border flex items-center gap-4">
+            <button
+              onClick={handleLike}
+              disabled={!currentUserId || likingInProgress}
+              className={cn(
+                "flex items-center gap-1.5 text-sm font-medium transition-colors",
+                liked
+                  ? "text-rose-500"
+                  : "text-muted-foreground hover:text-rose-500",
+                !currentUserId && "opacity-50 cursor-not-allowed"
+              )}
+              aria-label={liked ? "Unlike" : "Like"}
+            >
+              <Heart
+                className={cn(
+                  "h-4.5 w-4.5 transition-transform",
+                  liked && "fill-rose-500 scale-110"
+                )}
+              />
+              {likesCount}
+            </button>
+            <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+              <MessageCircle className="h-4.5 w-4.5" />
+              {comments.length}
+            </div>
+          </div>
+
+          {/* Comments section */}
+          <div className="border-t border-border">
+            <div className="px-5 py-3">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Comments
+              </h3>
+            </div>
+
+            {/* Comment input */}
+            {currentUserId ? (
+              <form
+                onSubmit={handlePostComment}
+                className="px-5 pb-3 flex items-center gap-2"
+              >
+                <input
+                  type="text"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder="Add a comment..."
+                  maxLength={1000}
+                  className="flex-1 h-9 bg-muted border border-border text-foreground text-sm rounded-lg px-3 focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-muted-foreground"
+                />
+                <button
+                  type="submit"
+                  disabled={!commentText.trim() || postingComment}
+                  className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-40 shrink-0"
+                  aria-label="Post comment"
+                >
+                  {postingComment ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </button>
+              </form>
+            ) : (
+              <p className="px-5 pb-3 text-xs text-muted-foreground">
+                Sign in to leave a comment.
+              </p>
+            )}
+
+            {/* Comments list */}
+            <div className="px-5 pb-4 flex flex-col gap-3 max-h-60 overflow-y-auto">
+              {loadingComments ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                </div>
+              ) : comments.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">
+                  No comments yet. Be the first to share your thoughts!
+                </p>
+              ) : (
+                comments.map((comment) => (
+                  <div key={comment.id} className="flex gap-2.5">
+                    <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <span className="text-[10px] font-bold text-primary uppercase">
+                        {comment.user_name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .slice(0, 2)}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-xs font-semibold text-foreground">
+                          {comment.user_name}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {formatDate(comment.created_at)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed break-words">
+                        {comment.content}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -315,6 +520,15 @@ export default function FilmsPage() {
   useEffect(() => {
     fetchVideos()
   }, [fetchVideos])
+
+  const handleVideoUpdate = (id: string, updates: Partial<TikTokVideo>) => {
+    setVideos((prev) =>
+      prev.map((v) => (v.id === id ? { ...v, ...updates } : v))
+    )
+    if (selectedVideo?.id === id) {
+      setSelectedVideo((prev) => (prev ? { ...prev, ...updates } : prev))
+    }
+  }
 
   // Filter
   let filtered = videos
@@ -519,6 +733,7 @@ export default function FilmsPage() {
           video={selectedVideo}
           onClose={() => setSelectedVideo(null)}
           currentUserId={session?.user?.id}
+          onVideoUpdate={handleVideoUpdate}
           onDelete={async (id) => {
             const res = await fetch(`/api/videos/${id}`, { method: "DELETE" })
             if (!res.ok) {
