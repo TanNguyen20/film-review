@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import {
   Film,
   Play,
@@ -492,15 +493,23 @@ function VideoEmbedModal({
   )
 }
 
-export default function FilmsPage() {
+function FilmsContent() {
+  const searchParams = useSearchParams()
   const [videos, setVideos] = useState<TikTokVideo[]>([])
   const [loading, setLoading] = useState(true)
   const [activeGenre, setActiveGenre] = useState("All")
   const [activeSort, setActiveSort] = useState<SortOption>("Newest")
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "")
   const [selectedVideo, setSelectedVideo] = useState<TikTokVideo | null>(null)
   const [uploadOpen, setUploadOpen] = useState(false)
   const { data: session } = authClient.useSession()
+
+  useEffect(() => {
+    const q = searchParams.get("q")
+    if (q !== null) {
+      setSearchQuery(q)
+    }
+  }, [searchParams])
 
   const fetchVideos = useCallback(async () => {
     try {
@@ -563,8 +572,7 @@ export default function FilmsPage() {
   })
 
   return (
-    <main className="min-h-screen bg-background">
-      <Navbar />
+    <>
       <div className="pt-16">
         {/* Page header */}
         <section className="border-b border-border bg-card">
@@ -725,7 +733,6 @@ export default function FilmsPage() {
           )}
         </div>
       </div>
-      <Footer />
 
       {/* Embed modal */}
       {selectedVideo && (
@@ -753,6 +760,27 @@ export default function FilmsPage() {
         onClose={() => setUploadOpen(false)}
         onSuccess={fetchVideos}
       />
+    </>
+  )
+}
+
+export default function FilmsPage() {
+  return (
+    <main className="min-h-screen bg-background flex flex-col">
+      <Navbar />
+      <div className="flex-1">
+        <Suspense
+          fallback={
+            <div className="pt-32 flex flex-col items-center gap-3">
+              <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              <p className="text-sm text-muted-foreground">Loading films...</p>
+            </div>
+          }
+        >
+          <FilmsContent />
+        </Suspense>
+      </div>
+      <Footer />
     </main>
   )
 }

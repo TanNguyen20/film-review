@@ -23,6 +23,7 @@ export function Navbar() {
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [navbarSearch, setNavbarSearch] = useState("")
   
   // Fetch session state using the authClient instance
   const { data: session, isPending } = authClient.useSession()
@@ -112,6 +113,15 @@ export function Navbar() {
                 <Input
                   autoFocus
                   placeholder="Search films..."
+                  value={navbarSearch}
+                  onChange={(e) => setNavbarSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && navbarSearch.trim()) {
+                      router.push(`/films?q=${encodeURIComponent(navbarSearch.trim())}`)
+                      setSearchOpen(false)
+                      setNavbarSearch("")
+                    }
+                  }}
                   className="h-8 w-32 sm:w-48 bg-muted border-border text-sm focus-visible:ring-primary"
                 />
                 <button
