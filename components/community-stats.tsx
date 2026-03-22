@@ -18,7 +18,7 @@ const opinions = [
 
 export function CommunityStats() {
   return (
-    <section className="py-16 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section id="community" className="py-16 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       {/* Stats bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
         {stats.map(({ icon: Icon, label, value }) => (

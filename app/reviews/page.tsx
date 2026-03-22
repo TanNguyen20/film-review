@@ -210,7 +210,7 @@ export default function ReviewsPage() {
           </div>
         </section>
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+        <div id="community" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
           {/* Filter bar */}
           <div className="flex items-center justify-between gap-4 mb-6">
             <div className="flex flex-wrap gap-2">

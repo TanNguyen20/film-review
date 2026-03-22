@@ -10,7 +10,7 @@ const links = {
   ],
   Community: [
     { label: "Write a Review", href: "/reviews" },
-    { label: "Community Voices", href: "/reviews#community" },
+    { label: "Community Voices", href: "/#community" },
     { label: "Top Rated", href: "/trending" },
   ],
   Legal: [
