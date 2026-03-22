@@ -55,7 +55,7 @@ function VideoReviewCard({
       onClick={onWatch}
     >
       {/* Thumbnail area */}
-      <div className="relative aspect-[9/16] max-h-[260px] overflow-hidden bg-gradient-to-br from-primary/20 via-muted to-primary/5">
+      <div className="relative aspect-[9/16] max-h-[280px] w-full overflow-hidden bg-gradient-to-br from-primary/20 via-muted to-primary/5">
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="flex flex-col items-center gap-2 text-muted-foreground/60">
             <Video className="h-8 w-8" />
