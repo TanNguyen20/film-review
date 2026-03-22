@@ -7,26 +7,12 @@ import Link from "next/link"
 import { TrendingUp, Star, Play, Plus, Filter, SortAsc, Flame, Clock, Film, Heart, Video } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
-import { MovieModal } from "@/components/movie-modal"
 import { Button } from "@/components/ui/button"
-import { MOVIES, GENRES, type Movie } from "@/lib/movies"
+import { GENRES } from "@/lib/movies"
 import { cn } from "@/lib/utils"
 
 const SORT_OPTIONS = ["Trending", "Highest Rated", "Newest", "Most Reviews"] as const
 type SortOption = (typeof SORT_OPTIONS)[number]
-
-function sortMovies(movies: Movie[], sort: SortOption): Movie[] {
-  switch (sort) {
-    case "Highest Rated":
-      return [...movies].sort((a, b) => b.rating - a.rating)
-    case "Newest":
-      return [...movies].sort((a, b) => b.year - a.year)
-    case "Most Reviews":
-      return [...movies].sort((a, b) => a.id - b.id)
-    default:
-      return [...movies].sort((a, b) => a.rank - b.rank)
-  }
-}
 
 interface TikTokVideo {
   id: string
@@ -34,6 +20,7 @@ interface TikTokVideo {
   genre: string
   likes_count: number
   comments_count: number
+  created_at: string
 }
 
 function TopVideoRow({ video, index }: { video: TikTokVideo; index: number }) {
@@ -63,43 +50,40 @@ function TopVideoRow({ video, index }: { video: TikTokVideo; index: number }) {
   )
 }
 
-function MovieCard({ movie, onSelect }: { movie: Movie; onSelect: (m: Movie) => void }) {
+function TrendingVideoCard({ video, rank, hot }: { video: TikTokVideo; rank: number; hot: boolean }) {
   const [inList, setInList] = useState(false)
 
+  const colors = [
+    "from-blue-500/20 via-slate-900 to-blue-900/40",
+    "from-purple-500/20 via-slate-900 to-purple-900/40",
+    "from-emerald-500/20 via-slate-900 to-emerald-900/40",
+    "from-rose-500/20 via-slate-900 to-rose-900/40",
+    "from-amber-500/20 via-slate-900 to-amber-900/40",
+  ]
+  const colorIndex = video.id ? video.id.charCodeAt(0) % colors.length : 0
+  const bgClass = colors[colorIndex]
+
   return (
-    <article
-      className="group relative cursor-pointer rounded-xl overflow-hidden bg-card border border-border hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10"
-    >
-      {/* Poster */}
-      <div className="relative aspect-[2/3] overflow-hidden">
-        <Image
-          src={movie.poster}
-          alt={movie.title}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-        />
+    <article className="group relative cursor-pointer rounded-xl overflow-hidden bg-card border border-border hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10">
+      <div className={cn("relative aspect-[2/3] overflow-hidden bg-gradient-to-br", bgClass)}>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-2 text-muted-foreground/50">
+            <Video className="h-12 w-12" />
+          </div>
+        </div>
         <div className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
-          <button
-            onClick={() => onSelect(movie)}
+          <Link
+            href={`/films?q=${encodeURIComponent(video.title || "")}`}
             className="h-10 w-10 rounded-full bg-primary flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
-            aria-label={`Watch ${movie.title}`}
+            aria-label={`Search for ${video.title}`}
           >
             <Play className="h-4 w-4 fill-primary-foreground text-primary-foreground ml-0.5" />
-          </button>
-          <Link
-            href={`/movies/${movie.id}`}
-            className="h-10 w-10 rounded-full bg-muted border border-border flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
-            aria-label={`View details for ${movie.title}`}
-          >
-            <Star className="h-4 w-4 text-primary" />
           </Link>
         </div>
-        {/* Rank */}
         <div className="absolute top-2 left-2 h-7 w-7 rounded-md bg-background/80 backdrop-blur-sm flex items-center justify-center">
-          <span className="text-xs font-bold text-primary">#{movie.rank}</span>
+          <span className="text-xs font-bold text-primary">#{rank}</span>
         </div>
-        {/* Hot badge */}
-        {movie.hot && (
+        {hot && (
           <div className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-primary/90 px-2 py-0.5">
             <Flame className="h-3 w-3 text-primary-foreground" />
             <span className="text-[10px] font-bold text-primary-foreground">HOT</span>
@@ -107,24 +91,27 @@ function MovieCard({ movie, onSelect }: { movie: Movie; onSelect: (m: Movie) => 
         )}
       </div>
 
-      {/* Info */}
       <div className="p-3">
-        <Link href={`/movies/${movie.id}`}>
+        <Link href={`/films?q=${encodeURIComponent(video.title || "")}`}>
           <h3 className="font-semibold text-foreground text-sm truncate leading-tight hover:text-primary transition-colors">
-            {movie.title}
+            {video.title || "Untitled"}
           </h3>
         </Link>
         <div className="flex items-center justify-between mt-1.5">
           <div className="flex items-center gap-1">
-            <Star className="h-3.5 w-3.5 fill-primary text-primary" />
-            <span className="text-primary text-xs font-bold">{movie.rating}</span>
+            <Heart className="h-3.5 w-3.5 fill-rose-500 text-rose-500" />
+            <span className="text-rose-500 text-xs font-bold">{video.likes_count || 0}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground text-xs flex items-center gap-1">
-              <Clock className="h-3 w-3" />{movie.year}
+              <Clock className="h-3 w-3" />
+              {new Date(video.created_at).getFullYear() || "-"}
             </span>
             <button
-              onClick={() => setInList(!inList)}
+              onClick={(e) => {
+                e.preventDefault()
+                setInList(!inList)
+              }}
               className={cn(
                 "h-6 w-6 rounded flex items-center justify-center transition-colors",
                 inList
@@ -138,72 +125,53 @@ function MovieCard({ movie, onSelect }: { movie: Movie; onSelect: (m: Movie) => 
           </div>
         </div>
         <span className="mt-1.5 inline-block rounded text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5">
-          {movie.genre}
+          {video.genre || "-"}
         </span>
       </div>
     </article>
   )
 }
 
-function TopMovieRow({ movie, index, onSelect }: { movie: Movie; index: number; onSelect: (m: Movie) => void }) {
-  return (
-    <article className="flex items-center gap-4 rounded-xl bg-card border border-border p-4 hover:border-primary/50 transition-all">
-      <span className="font-serif text-3xl font-bold text-muted-foreground/30 w-8 shrink-0 text-center leading-none">
-        {index + 1}
-      </span>
-      <div className="relative h-16 w-11 rounded-md overflow-hidden shrink-0">
-        <Image src={movie.poster} alt={movie.title} fill className="object-cover" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <Link href={`/movies/${movie.id}`}>
-          <h3 className="font-semibold text-foreground text-sm truncate hover:text-primary transition-colors">
-            {movie.title}
-          </h3>
-        </Link>
-        <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-xs text-muted-foreground">{movie.genre}</span>
-          <span className="text-muted-foreground">·</span>
-          <span className="text-xs text-muted-foreground">{movie.year}</span>
-        </div>
-      </div>
-      <div className="flex items-center gap-1 shrink-0">
-        <Star className="h-3.5 w-3.5 fill-primary text-primary" />
-        <span className="text-primary text-sm font-bold">{movie.rating}</span>
-      </div>
-      <Button
-        size="sm"
-        variant="ghost"
-        className="shrink-0 h-8 px-3 text-muted-foreground hover:text-foreground"
-        onClick={() => onSelect(movie)}
-      >
-        <Play className="h-3.5 w-3.5" />
-      </Button>
-    </article>
-  )
+function TopMovieRow({ movie, index }: { movie: any; index: number }) {
+  // Empty, unused component
+  return null
 }
 
 export default function TrendingPage() {
   const [activeGenre, setActiveGenre] = useState("All")
   const [activeSort, setActiveSort] = useState<SortOption>("Trending")
-  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null)
-  const [topRatedVideos, setTopRatedVideos] = useState<TikTokVideo[]>([])
+  const [videos, setVideos] = useState<TikTokVideo[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetch("/api/videos")
       .then((res) => res.json())
       .then((data) => {
         if (data.videos) {
-          const sorted = [...data.videos].sort(
-            (a, b) => (b.likes_count || 0) - (a.likes_count || 0)
-          )
-          setTopRatedVideos(sorted.slice(0, 5))
+          setVideos(data.videos)
         }
       })
-      .catch((err) => console.error("Failed to fetch top rated:", err))
+      .catch((err) => console.error("Failed to fetch videos:", err))
+      .finally(() => setLoading(false))
   }, [])
 
-  const filtered = activeGenre === "All" ? MOVIES : MOVIES.filter((m) => m.genreList?.includes(activeGenre))
-  const sorted = sortMovies(filtered, activeSort)
+  const filtered = activeGenre === "All" ? videos : videos.filter((v) => v.genre?.toLowerCase() === activeGenre.toLowerCase())
+  
+  const sorted = [...filtered].sort((a, b) => {
+    switch (activeSort) {
+      case "Highest Rated":
+        return (b.likes_count || 0) - (a.likes_count || 0)
+      case "Newest":
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      case "Most Reviews":
+        return (b.comments_count || 0) - (a.comments_count || 0)
+      default:
+        // Trending: combine metrics
+        return ((b.likes_count || 0) * 2 + (b.comments_count || 0)) - ((a.likes_count || 0) * 2 + (a.comments_count || 0))
+    }
+  })
+
+  const topRatedVideos = [...videos].sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0)).slice(0, 5)
 
   return (
     <main className="min-h-screen bg-background">
@@ -269,10 +237,15 @@ export default function TrendingPage() {
                 {sorted.length} film{sorted.length !== 1 ? "s" : ""} found
               </p>
 
-              {sorted.length > 0 ? (
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-24 text-center">
+                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mb-4"></div>
+                  <p className="text-muted-foreground font-medium">Loading trending films...</p>
+                </div>
+              ) : sorted.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {sorted.map((movie) => (
-                    <MovieCard key={movie.id} movie={movie} onSelect={setSelectedMovie} />
+                  {sorted.map((video, index) => (
+                    <TrendingVideoCard key={video.id} video={video} rank={index + 1} hot={index < 3} />
                   ))}
                 </div>
               ) : (
@@ -326,7 +299,6 @@ export default function TrendingPage() {
         </div>
       </div>
       <Footer />
-      <MovieModal movie={selectedMovie} onClose={() => setSelectedMovie(null)} />
     </main>
   )
 }
