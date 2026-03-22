@@ -101,7 +101,7 @@ export function NotificationDropdown() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={handleToggle}
-        className="text-muted-foreground hover:text-foreground transition-colors relative"
+        className="h-9 w-9 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors relative"
         aria-label="Notifications"
         aria-expanded={open}
       >
