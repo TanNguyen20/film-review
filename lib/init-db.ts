@@ -61,4 +61,15 @@ export async function initDatabase() {
       created_at TIMESTAMP DEFAULT NOW()
     );
   `);
+
+  // Watchlist
+  await query(`
+    CREATE TABLE IF NOT EXISTS watchlist (
+      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      video_id UUID NOT NULL REFERENCES tiktok_videos(id) ON DELETE CASCADE,
+      created_at TIMESTAMP DEFAULT NOW(),
+      UNIQUE(user_id, video_id)
+    );
+  `);
 }

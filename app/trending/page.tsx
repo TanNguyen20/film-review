@@ -1,8 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { useEffect } from "react"
-import Image from "next/image"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { TrendingUp, Star, Play, Plus, Filter, SortAsc, Flame, Clock, Film, Heart, Video } from "lucide-react"
 import { Navbar } from "@/components/navbar"
@@ -10,6 +8,7 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { GENRES } from "@/lib/movies"
 import { cn } from "@/lib/utils"
+import { authClient } from "@/lib/auth-client"
 
 const SORT_OPTIONS = ["Trending", "Highest Rated", "Newest", "Most Reviews"] as const
 type SortOption = (typeof SORT_OPTIONS)[number]
@@ -50,9 +49,19 @@ function TopVideoRow({ video, index }: { video: TikTokVideo; index: number }) {
   )
 }
 
-function TrendingVideoCard({ video, rank, hot }: { video: TikTokVideo; rank: number; hot: boolean }) {
-  const [inList, setInList] = useState(false)
-
+function TrendingVideoCard({
+  video,
+  rank,
+  hot,
+  inWatchlist,
+  onToggleWatchlist,
+}: {
+  video: TikTokVideo
+  rank: number
+  hot: boolean
+  inWatchlist: boolean
+  onToggleWatchlist: (videoId: string) => void
+}) {
   const colors = [
     "from-blue-500/20 via-slate-900 to-blue-900/40",
     "from-purple-500/20 via-slate-900 to-purple-900/40",
@@ -110,17 +119,17 @@ function TrendingVideoCard({ video, rank, hot }: { video: TikTokVideo; rank: num
             <button
               onClick={(e) => {
                 e.preventDefault()
-                setInList(!inList)
+                onToggleWatchlist(video.id)
               }}
               className={cn(
                 "h-6 w-6 rounded flex items-center justify-center transition-colors",
-                inList
+                inWatchlist
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary"
               )}
-              aria-label={inList ? "Remove from watchlist" : "Add to watchlist"}
+              aria-label={inWatchlist ? "Remove from watchlist" : "Add to watchlist"}
             >
-              <Plus className={cn("h-3.5 w-3.5 transition-transform", inList && "rotate-45")} />
+              <Plus className={cn("h-3.5 w-3.5 transition-transform", inWatchlist && "rotate-45")} />
             </button>
           </div>
         </div>
@@ -142,6 +151,8 @@ export default function TrendingPage() {
   const [activeSort, setActiveSort] = useState<SortOption>("Trending")
   const [videos, setVideos] = useState<TikTokVideo[]>([])
   const [loading, setLoading] = useState(true)
+  const [watchlistIds, setWatchlistIds] = useState<Set<string>>(new Set())
+  const { data: session } = authClient.useSession()
 
   useEffect(() => {
     fetch("/api/videos")
@@ -154,6 +165,44 @@ export default function TrendingPage() {
       .catch((err) => console.error("Failed to fetch videos:", err))
       .finally(() => setLoading(false))
   }, [])
+
+  // Fetch watchlist IDs for the current user
+  useEffect(() => {
+    if (!session?.user) return
+    fetch("/api/watchlist")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.videos) {
+          setWatchlistIds(new Set(data.videos.map((v: { id: string }) => v.id)))
+        }
+      })
+      .catch(() => {})
+  }, [session])
+
+  const handleToggleWatchlist = useCallback(async (videoId: string) => {
+    if (!session?.user) return
+    try {
+      const res = await fetch("/api/watchlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ videoId }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setWatchlistIds((prev) => {
+          const next = new Set(prev)
+          if (data.inWatchlist) {
+            next.add(videoId)
+          } else {
+            next.delete(videoId)
+          }
+          return next
+        })
+      }
+    } catch (err) {
+      console.error("Failed to toggle watchlist:", err)
+    }
+  }, [session])
 
   const filtered = activeGenre === "All" ? videos : videos.filter((v) => v.genre?.toLowerCase() === activeGenre.toLowerCase())
   
@@ -245,7 +294,14 @@ export default function TrendingPage() {
               ) : sorted.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {sorted.map((video, index) => (
-                    <TrendingVideoCard key={video.id} video={video} rank={index + 1} hot={index < 3} />
+                    <TrendingVideoCard
+                      key={video.id}
+                      video={video}
+                      rank={index + 1}
+                      hot={index < 3}
+                      inWatchlist={watchlistIds.has(video.id)}
+                      onToggleWatchlist={handleToggleWatchlist}
+                    />
                   ))}
                 </div>
               ) : (

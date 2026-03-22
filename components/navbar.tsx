@@ -15,6 +15,7 @@ const navLinks = [
   { label: "Home", href: "/" },
   { label: "Films", href: "/films" },
   { label: "Trending", href: "/trending" },
+  { label: "Watchlist", href: "/watchlist" },
   { label: "Reviews", href: "/reviews" },
 ]
 
