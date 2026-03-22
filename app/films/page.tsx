@@ -14,6 +14,7 @@ import {
   X,
   Search,
   RefreshCw,
+  Trash2,
 } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -138,10 +139,17 @@ function VideoCard({
 function VideoEmbedModal({
   video,
   onClose,
+  onDelete,
+  currentUserId,
 }: {
   video: TikTokVideo
   onClose: () => void
+  onDelete: (id: string) => Promise<void>
+  currentUserId?: string
 }) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose()
@@ -155,6 +163,21 @@ function VideoEmbedModal({
   }, [onClose])
 
   const hasVideoId = !!video.tiktok_video_id
+  const isOwner = currentUserId && video.user_id === currentUserId
+
+  const handleDelete = async () => {
+    if (!confirmingDelete) {
+      setConfirmingDelete(true)
+      return
+    }
+    setDeleting(true)
+    try {
+      await onDelete(video.id)
+    } catch {
+      setDeleting(false)
+      setConfirmingDelete(false)
+    }
+  }
 
   return (
     <div
@@ -188,13 +211,39 @@ function VideoEmbedModal({
               </span>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0 ml-3"
-            aria-label="Close"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-1 shrink-0 ml-3">
+            {isOwner && (
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className={cn(
+                  "h-8 rounded-full flex items-center justify-center transition-colors gap-1.5 px-3",
+                  confirmingDelete
+                    ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    : "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                )}
+                aria-label="Delete video"
+              >
+                {deleting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
+                {confirmingDelete && (
+                  <span className="text-xs font-semibold">
+                    {deleting ? "Deleting..." : "Confirm"}
+                  </span>
+                )}
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         {/* Video Embed */}
@@ -469,6 +518,17 @@ export default function FilmsPage() {
         <VideoEmbedModal
           video={selectedVideo}
           onClose={() => setSelectedVideo(null)}
+          currentUserId={session?.user?.id}
+          onDelete={async (id) => {
+            const res = await fetch(`/api/videos/${id}`, { method: "DELETE" })
+            if (!res.ok) {
+              const data = await res.json()
+              alert(data.error || "Failed to delete video")
+              throw new Error(data.error)
+            }
+            setVideos((prev) => prev.filter((v) => v.id !== id))
+            setSelectedVideo(null)
+          }}
         />
       )}
 
