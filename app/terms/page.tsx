@@ -1,3 +1,4 @@
+import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
 import { ChevronRight, Film, Mail } from "lucide-react"
 import type { Metadata } from "next"
@@ -244,26 +245,7 @@ export default function TermsPage() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-card mt-8">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-primary">
-              <Film className="h-3.5 w-3.5 text-primary-foreground" />
-            </div>
-            <span className="font-serif text-base font-bold text-foreground">
-              Film<span className="text-primary">Review</span>
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground text-center">
-            &copy; {new Date().getFullYear()} FilmReview. All rights reserved.
-          </p>
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <Link href="/terms" className="text-primary font-medium">Terms of Service</Link>
-            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }
