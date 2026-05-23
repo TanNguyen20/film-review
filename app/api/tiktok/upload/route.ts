@@ -40,6 +40,8 @@ export async function POST(req: NextRequest) {
     const disableComment = formData.get("disable_comment") === "true";
     const disableDuet = formData.get("disable_duet") === "true";
     const disableStitch = formData.get("disable_stitch") === "true";
+    const brandContentToggle = formData.get("brand_content_toggle") === "true";
+    const brandOrganicToggle = formData.get("brand_organic_toggle") === "true";
 
     if (!videoFile) {
       return NextResponse.json(
@@ -88,6 +90,8 @@ export async function POST(req: NextRequest) {
             disable_duet: disableDuet,
             disable_comment: disableComment,
             disable_stitch: disableStitch,
+            brand_content_toggle: brandContentToggle,
+            brand_organic_toggle: brandOrganicToggle,
           },
           source_info: {
             source: "FILE_UPLOAD",
