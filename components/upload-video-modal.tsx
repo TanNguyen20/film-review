@@ -566,27 +566,30 @@ export function UploadVideoModal({ open, onClose, onSuccess }: UploadVideoModalP
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-2.5">
                     Interaction Settings
                   </label>
-                  <div className="flex flex-wrap gap-3">
-                    <ToggleSwitch
+                  <div className="space-y-2.5">
+                    <ToggleSwitchRow
                       label="Allow Comments"
+                      description="Let viewers comment on your video"
                       checked={!disableComment}
                       onChange={(checked) => setDisableComment(!checked)}
                       disabled={state === "uploading" || globalCommentDisabled}
-                      infoText={globalCommentDisabled ? "Disabled by your TikTok" : undefined}
+                      infoText={globalCommentDisabled ? "Disabled by your TikTok account settings" : undefined}
                     />
-                    <ToggleSwitch
+                    <ToggleSwitchRow
                       label="Allow Duet"
+                      description="Allow others to Duet with your video"
                       checked={!disableDuet}
                       onChange={(checked) => setDisableDuet(!checked)}
                       disabled={state === "uploading" || globalDuetDisabled}
-                      infoText={globalDuetDisabled ? "Disabled by your TikTok" : undefined}
+                      infoText={globalDuetDisabled ? "Disabled by your TikTok account settings" : undefined}
                     />
-                    <ToggleSwitch
+                    <ToggleSwitchRow
                       label="Allow Stitch"
+                      description="Allow others to Stitch with your video"
                       checked={!disableStitch}
                       onChange={(checked) => setDisableStitch(!checked)}
                       disabled={state === "uploading" || globalStitchDisabled}
-                      infoText={globalStitchDisabled ? "Disabled by your TikTok" : undefined}
+                      infoText={globalStitchDisabled ? "Disabled by your TikTok account settings" : undefined}
                     />
                   </div>
                 </div>
@@ -676,14 +679,16 @@ export function UploadVideoModal({ open, onClose, onSuccess }: UploadVideoModalP
   )
 }
 
-function ToggleSwitch({
+function ToggleSwitchRow({
   label,
+  description,
   checked,
   onChange,
   disabled,
   infoText,
 }: {
   label: string
+  description: string
   checked: boolean
   onChange: (v: boolean) => void
   disabled?: boolean
@@ -692,35 +697,43 @@ function ToggleSwitch({
   return (
     <label
       className={cn(
-        "flex flex-col gap-1 rounded-lg bg-card border border-border px-3 py-2 cursor-pointer transition-colors flex-1 min-w-[140px]",
-        checked && !disabled && "border-primary/20 bg-primary/5",
-        disabled && "opacity-50 cursor-not-allowed bg-muted/35"
+        "flex items-center justify-between p-3 rounded-xl bg-card border border-border transition-all duration-200 select-none cursor-pointer",
+        checked && !disabled && "border-primary/20 bg-primary/[0.02]",
+        disabled && "opacity-60 cursor-not-allowed bg-muted/20"
       )}
     >
-      <div className="flex items-center justify-between gap-2 w-full">
-        <span className="text-xs font-semibold text-foreground whitespace-nowrap">{label}</span>
-        <button
-          role="switch"
-          type="button"
-          aria-checked={checked}
-          onClick={() => !disabled && onChange(!checked)}
-          disabled={disabled}
-          className={cn(
-            "relative h-5 w-9 rounded-full transition-colors shrink-0",
-            checked && !disabled ? "bg-primary" : "bg-muted-foreground/30"
-          )}
-        >
-          <span
-            className={cn(
-              "absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform shadow-sm",
-              checked && !disabled && "translate-x-4"
-            )}
-          />
-        </button>
+      <div className="space-y-0.5 pr-4">
+        <span className="text-xs font-semibold text-foreground block">
+          {label}
+        </span>
+        {infoText ? (
+          <span className="text-[10px] text-amber-500 font-medium block animate-pulse">
+            {infoText}
+          </span>
+        ) : (
+          <span className="text-[10px] text-muted-foreground block">
+            {description}
+          </span>
+        )}
       </div>
-      {infoText && (
-        <span className="text-[9px] text-amber-500 font-medium leading-normal">{infoText}</span>
-      )}
+      <button
+        role="switch"
+        type="button"
+        aria-checked={checked}
+        onClick={() => !disabled && onChange(!checked)}
+        disabled={disabled}
+        className={cn(
+          "relative h-5.5 w-10 rounded-full transition-colors shrink-0",
+          checked && !disabled ? "bg-primary" : "bg-muted-foreground/30"
+        )}
+      >
+        <span
+          className={cn(
+            "absolute top-0.5 left-0.5 h-4.5 w-4.5 rounded-full bg-white transition-transform shadow-sm",
+            checked && !disabled && "translate-x-4.5"
+          )}
+        />
+      </button>
     </label>
   )
 }
